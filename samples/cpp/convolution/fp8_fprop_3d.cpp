@@ -39,7 +39,7 @@
      namespace fe = cudnn_frontend;
      // conv problem size
      // int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
-     int64_t n = 1, c = 8, d = 9, h = 240, w = 360;
+     int64_t n = 1, c = 128, d = 9, h = 240, w = 360;
      int64_t k = 256, r = 3, s = 3, t = 3;
  
      // Initialize input tensors with int8_t as proxy for fp8
@@ -135,6 +135,10 @@
          {amax, amax_gpu.devPtr}};
  
      std::cout << graph->print() << std::endl;
-     REQUIRE(graph->execute(handle, variant_pack, workspace.devPtr).is_good());
-     CUDNN_CHECK(cudnnDestroy(handle));
+
+     for (int i = 0; i < 10; ++i) {
+        REQUIRE(graph->execute(handle, variant_pack, workspace.devPtr).is_good());
+        // CUDNN_CHECK(cudnnDestroy(handle));
+    }
+
  }
