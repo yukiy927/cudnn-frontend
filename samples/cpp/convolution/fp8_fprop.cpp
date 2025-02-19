@@ -38,7 +38,7 @@ TEST_CASE("Convolution fp8 precision", "[conv][graph]") {
 
     namespace fe = cudnn_frontend;
     // conv problem size
-    int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
+    int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 3, s = 3;
 
     // Initialize input tensors with int8_t as proxy for fp8
     auto graph = std::make_shared<fe::graph::Graph>();
@@ -59,7 +59,10 @@ TEST_CASE("Convolution fp8 precision", "[conv][graph]") {
                                .set_data_type(fe::DataType_t::FP8_E4M3));
 
     auto conv_options =
-        fe::graph::Conv_fprop_attributes().set_padding({0, 0}).set_stride({1, 1}).set_dilation({1, 1}).set_name("conv");
+        fe::graph::Conv_fprop_attributes()
+                        .set_padding({0, 0})
+                        .set_stride({1, 1})
+                        .set_dilation({1, 1}).set_name("conv");
     auto conv_output_fp8 = graph->conv_fprop(X, W, conv_options);
 
     auto descale_x = graph->tensor(fe::graph::Tensor_attributes()
@@ -110,7 +113,7 @@ TEST_CASE("Convolution fp8 precision", "[conv][graph]") {
     // Use int8_t as proxy for fp8
     Surface<int8_t> X_gpu(n * c * h * w, false);
     Surface<int8_t> W_gpu(k * c * r * s, false);
-    Surface<int8_t> Y_gpu(n * k * h * w, false);
+    Surface<int8_t> Y_gpu(n * k * h * w, false); //
 
     Surface<float> X_descale_gpu(1, false);
     Surface<float> W_descale_gpu(1, false);

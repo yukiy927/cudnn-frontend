@@ -37,10 +37,15 @@
      }
  
      namespace fe = cudnn_frontend;
-     // conv problem size
-     // int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
-     int64_t n = 1, c = 128, d = 9, h = 240, w = 360;
-     int64_t k = 256, r = 3, s = 3, t = 3;
+
+     int64_t n = 1, c = 256, d = 3, h = 14, w = 12; // c = input channel
+     int64_t k = 512;                // k = output channel
+     int64_t r = 3, s = 3, t = 3;   // (r, s, t) = kernel_size
+     
+     // Calculate output dimensions
+     int64_t out_d = (d - r + 1);
+     int64_t out_h = (h - s + 1);
+     int64_t out_w = (w - t + 1);
  
      // Initialize input tensors with int8_t as proxy for fp8
      auto graph = std::make_shared<fe::graph::Graph>();
@@ -114,7 +119,7 @@
      // Use int8_t as proxy for fp8
      Surface<int8_t> X_gpu(n * c * d * h * w, false);
      Surface<int8_t> W_gpu(k * c * r * s * t, false);
-     Surface<int8_t> Y_gpu(n * k * d * h * w, false);
+     Surface<int8_t> Y_gpu(n * k * out_d * out_h * out_w, false);
  
      Surface<float> X_descale_gpu(1, false);
      Surface<float> W_descale_gpu(1, false);

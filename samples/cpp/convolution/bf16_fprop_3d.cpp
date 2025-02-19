@@ -10,11 +10,19 @@ TEST_CASE("Convolution fprop", "[conv][graph][caching]") {
         SKIP("Architecture is not supported by currend cudnn version");
     }
 
-    int64_t n = 1, c = 128, d = 9, h = 240, w = 360, k = 256, r = 3, s = 3, t = 3;
+    int64_t n = 1, c = 128, d = 9, h = 14, w = 12; // c = input channel
+    int64_t k = 128;                // k = output channel
+    int64_t r = 3, s = 3, t = 3;   // (r, s, t) = kernel_size
 
+    // Calculate output dimensions
+    int64_t out_d = (d - r + 1);
+    int64_t out_h = (h - s + 1);
+    int64_t out_w = (w - t + 1);
+    
     auto build_new_graph = [=](cudnnHandle_t handle) {
         auto graph = std::make_shared<fe::graph::Graph>();
-        graph->set_io_data_type(fe::DataType_t::BFLOAT16).set_compute_data_type(fe::DataType_t::FLOAT);
+        graph->set_io_data_type(fe::DataType_t::BFLOAT16)
+                .set_compute_data_type(fe::DataType_t::FLOAT);
 
         auto X = graph->tensor(fe::graph::Tensor_attributes()
                                    .set_name("image")
@@ -26,8 +34,10 @@ TEST_CASE("Convolution fprop", "[conv][graph][caching]") {
                                    .set_dim({k, c, r, s, t})
                                    .set_stride({c * r * s * t, 1, c * s * t, c * t, c}));
 
-        auto conv_options =
-            fe::graph::Conv_fprop_attributes().set_padding({0, 0, 0}).set_stride({1, 1, 1}).set_dilation({1, 1, 1});
+        auto conv_options = fe::graph::Conv_fprop_attributes()
+                                .set_padding({0, 0, 0})
+                                .set_stride({1, 1, 1})
+                                .set_dilation({1, 1, 1});
         auto Y = graph->conv_fprop(X, W, conv_options);
 
         Y->set_output(true);
@@ -53,7 +63,7 @@ TEST_CASE("Convolution fprop", "[conv][graph][caching]") {
 
     Surface<half> x_tensor(n * c * d * h * w, false);
     Surface<half> w_tensor(k * c * r * s * t, false);
-    Surface<half> y_tensor(n * k * d * h * w, false);
+    Surface<half> y_tensor(n * k * out_d * out_h * out_w, false);
 
     std::unordered_map<int64_t, void *> variant_pack = {
         {X->get_uid(), x_tensor.devPtr}, {W->get_uid(), w_tensor.devPtr}, {Y->get_uid(), y_tensor.devPtr}};
